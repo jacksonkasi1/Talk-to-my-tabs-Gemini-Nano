@@ -28,9 +28,27 @@ const FloatingButton = () => {
   const [isSaving, setIsSaving] = useState(false)
   const [isHidden, setIsHidden] = useState(false)
   const [theme, setTheme] = useState<"light" | "dark">("light")
+  const [isExtensionInvalid, setIsExtensionInvalid] = useState(false)
   const buttonRef = useRef<HTMLDivElement>(null)
   const dragStartPos = useRef({ x: 0, y: 0, startBottom: 0, startRight: 0 })
   const dragThreshold = useRef(5) // 5px minimum movement to start drag
+  
+  // Hide button on restricted pages
+  const isRestrictedPage = /^(chrome:\/\/|chrome-extension:\/\/|about:|data:|file:\/\/|view-source:)/.test(window.location.href)
+  
+  // Check extension validity periodically
+  useEffect(() => {
+    const checkExtensionValidity = () => {
+      if (!chrome.runtime?.id) {
+        setIsExtensionInvalid(true)
+      }
+    }
+    
+    // Check every 2 seconds
+    const interval = setInterval(checkExtensionValidity, 2000)
+    
+    return () => clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     // Apply theme to root element
@@ -160,23 +178,55 @@ const FloatingButton = () => {
   const handleOpenSidebar = () => {
     setIsExpanded(false)
 
-    // Direct approach - mousedown should preserve user gesture better
-    chrome.runtime.sendMessage({ action: 'openSidePanel' }, (response) => {
-      if (response?.success) {
-        chrome.runtime.sendMessage({ action: 'sidebarOpened' })
-      } else {
-        console.error('Failed to open side panel:', response?.error)
+    try {
+      // Check if extension context is valid
+      if (!chrome.runtime?.id) {
+        alert('Extension was updated. Please reload this page to use TalkToMyTabs.')
+        return
       }
-    })
+
+      // Direct approach - mousedown should preserve user gesture better
+      chrome.runtime.sendMessage({ action: 'openSidePanel' }, (response) => {
+        if (chrome.runtime.lastError) {
+          console.error('Runtime error:', chrome.runtime.lastError)
+          alert('Extension connection lost. Please reload this page.')
+          return
+        }
+        
+        if (response?.success) {
+          chrome.runtime.sendMessage({ action: 'sidebarOpened' })
+        } else {
+          console.error('Failed to open side panel:', response?.error)
+        }
+      })
+    } catch (error) {
+      console.error('Error opening sidebar:', error)
+      alert('Extension error. Please reload this page.')
+    }
   }
 
   const handleSaveArticle = async () => {
     setIsSaving(true)
     
     try {
+      // Check if extension context is valid
+      if (!chrome.runtime?.id) {
+        alert('Extension was updated. Please reload this page to use TalkToMyTabs.')
+        setIsSaving(false)
+        return
+      }
+
       const response = await chrome.runtime.sendMessage({
         action: 'saveArticle'
       })
+      
+      // Check for runtime errors
+      if (chrome.runtime.lastError) {
+        console.error('Runtime error:', chrome.runtime.lastError)
+        alert('Extension connection lost. Please reload this page.')
+        setIsSaving(false)
+        return
+      }
       
       if (response?.success) {
         setShowSuccess(true)
@@ -184,15 +234,49 @@ const FloatingButton = () => {
         setTimeout(() => setShowSuccess(false), 2000)
       } else {
         console.error('Failed to save article:', response?.error)
+        alert(`Failed to save article: ${response?.error || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('Error saving article:', error)
+      if (error instanceof Error && error.message.includes('Extension context invalidated')) {
+        alert('Extension was updated. Please reload this page to use TalkToMyTabs.')
+      } else {
+        alert(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      }
     } finally {
       setIsSaving(false)
     }
   }
 
-  if (isHidden) return null
+  // Don't show on restricted pages or when hidden
+  if (isRestrictedPage || isHidden) return null
+
+  // Show reload message if extension is invalid
+  if (isExtensionInvalid) {
+    return (
+      <div
+        style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          zIndex: 2147483647,
+          backgroundColor: '#ff6b6b',
+          color: 'white',
+          padding: '12px 16px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          fontSize: '14px',
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
+          maxWidth: '300px',
+          cursor: 'pointer'
+        }}
+        onClick={() => window.location.reload()}
+      >
+        <div style={{ fontWeight: 600, marginBottom: '4px' }}>Extension Updated</div>
+        <div style={{ fontSize: '12px', opacity: 0.9 }}>Click here to reload the page</div>
+      </div>
+    )
+  }
 
   return (
     <div

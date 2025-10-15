@@ -1155,23 +1155,58 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case 'getActiveTabContent':
       // Get content from active tab
       chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-        if (tabs[0]?.id) {
+        console.log('🔍 [Background] getActiveTabContent requested')
+        console.log('   Active tabs:', tabs)
+        if (tabs[0]?.id && tabs[0]?.url) {
+          // Check if URL is restricted
+          const url = tabs[0].url
+          const restrictedPatterns = [
+            /^chrome:\/\//,
+            /^chrome-extension:\/\//,
+            /^about:/,
+            /^data:/,
+            /^file:\/\//,
+            /^view-source:/
+          ]
+          
+          const isRestricted = restrictedPatterns.some(pattern => pattern.test(url))
+          
+          if (isRestricted) {
+            console.warn('   ⚠️ Restricted URL:', url)
+            sendResponse({ 
+              success: false, 
+              error: 'restricted_url',
+              message: 'Cannot access content from this page type (chrome://, extension pages, etc.)'
+            })
+            return
+          }
+          
           try {
+            console.log('   Extracting content from tab:', tabs[0].id, url)
             const content = await injectContentExtractor(tabs[0].id)
+            console.log('   Extracted content:', {
+              hasContent: !!content,
+              title: content?.title,
+              url: content?.url,
+              contentLength: content?.content?.length || 0,
+              contentPreview: content?.content?.substring(0, 100)
+            })
             if (content) {
               sendResponse({ success: true, data: content })
             } else {
-              sendResponse({ success: false, error: 'No content extracted' })
+              console.warn('   ⚠️ No content extracted')
+              sendResponse({ success: false, error: 'no_content', message: 'No content could be extracted from this page' })
             }
           } catch (error) {
-            console.error('Error extracting content:', error)
+            console.error('   ❌ Error extracting content:', error)
             const errorMessage = error instanceof Error 
               ? error.message 
               : String(error)
-            sendResponse({ success: false, error: errorMessage })
+            sendResponse({ success: false, error: 'extraction_error', message: errorMessage })
           }
         } else {
-          sendResponse({ success: false, error: 'No active tab found' })
+          console.error('   ❌ No active tab found')
+          sendResponse({ success: false, error: 'no_tab', message: 'No active tab found' })
         }
       })
       return true

@@ -58,16 +58,35 @@ export const useChatSession = () => {
   const loadPageContent = useCallback(async (): Promise<PageContent | null> => {
     setLoadingContent(true)
     try {
+      console.log('📄 Requesting page content...')
       const response = await chrome.runtime.sendMessage({ 
         action: 'getActiveTabContent' 
       })
       
+      console.log('📄 Content response:', response)
+      
       if (response?.success && response.data) {
+        console.log('✅ Content loaded successfully!')
+        console.log('   - Title:', response.data.title)
+        console.log('   - URL:', response.data.url)
+        console.log('   - Content length:', response.data.content?.length || 0)
+        console.log('   - Content preview:', response.data.content?.substring(0, 200))
         return response.data
       }
+      
+      // Handle specific error types
+      if (response?.error === 'restricted_url') {
+        console.warn('⚠️ Restricted URL - cannot access content')
+        throw new Error('RESTRICTED_URL')
+      }
+      
+      console.warn('⚠️ No content data in response')
       return null
     } catch (error) {
-      console.error('Error loading page content:', error)
+      console.error('❌ Error loading page content:', error)
+      if (error instanceof Error && error.message === 'RESTRICTED_URL') {
+        throw error // Re-throw to be handled by caller
+      }
       return null
     } finally {
       setLoadingContent(false)
@@ -75,17 +94,28 @@ export const useChatSession = () => {
   }, [setLoadingContent])
 
   const initializeSession = useCallback(async () => {
-    const content = await loadPageContent()
-    if (!content) {
-      console.error('Failed to load page content')
-      return
-    }
+    console.log('🚀 Initializing chat session...')
+    try {
+      const content = await loadPageContent()
+      if (!content) {
+        console.error('❌ Failed to load page content')
+        return
+      }
 
+    console.log('✅ Content loaded, proceeding with session initialization')
     const domain = getDomainFromUrl(content.url)
     lastCheckedUrl.current = content.url
+    
+    console.log('🌐 Domain:', domain)
+    console.log('📊 Content stats:', {
+      hasContent: !!content.content,
+      contentLength: content.content?.length || 0,
+      estimatedTokens: estimateTokens(content.content || '')
+    })
 
     // Check if content is large and should show warning
     if (shouldShowContentWarning(content)) {
+      console.log('⚠️ Content is large, showing warning...')
       setPendingContent(content)
       setShowContentWarning(true)
       return
@@ -93,6 +123,7 @@ export const useChatSession = () => {
 
     // Check if we already have a session for this domain
     if (hasSessionForDomain(domain)) {
+      console.log('♻️ Loading existing session for domain:', domain)
       // Load existing session
       loadSession(domain)
 
@@ -108,9 +139,25 @@ export const useChatSession = () => {
         setShowNewChatButton(false)
       }
     } else {
+      console.log('🆕 Creating new session with content:', {
+        domain,
+        url: content.url,
+        title: content.title,
+        hasPageContent: !!content,
+        contentLength: content.content?.length || 0
+      })
       // Create new session
       createSession(domain, content.url, content.title, content)
       setShowNewChatButton(false)
+    }
+    } catch (error) {
+      if (error instanceof Error && error.message === 'RESTRICTED_URL') {
+        console.warn('⚠️ Cannot access content from restricted page')
+        // Don't clear anything, just skip initialization
+        return
+      }
+      // Re-throw other errors
+      throw error
     }
   }, [loadPageContent, hasSessionForDomain, loadSession, createSession, sessions, setShowNewChatButton, showNewChatButton, shouldShowContentWarning, setPendingContent, setShowContentWarning])
 
@@ -215,22 +262,34 @@ export const useChatSession = () => {
   const handleContentWarningProceed = useCallback(() => {
     if (!pendingContent) return
 
+    console.log('⚡ Content warning proceed - creating/updating session with content')
     const domain = getDomainFromUrl(pendingContent.url)
 
     // Check if we already have a session for this domain
     if (hasSessionForDomain(domain)) {
-      loadSession(domain)
       const existingSession = sessions[domain]
-      if (existingSession && existingSession.url !== pendingContent.url) {
-        setShowNewChatButton(true)
+      
+      // If same URL, update the existing session with fresh content
+      if (existingSession && existingSession.url === pendingContent.url) {
+        console.log('🔄 Updating existing session with fresh content')
+        updateSession(domain, {
+          pageContent: pendingContent,
+          title: pendingContent.title
+        })
+        loadSession(domain)
+      } else {
+        // Different URL on same domain - create fresh session
+        console.log('🆕 Creating new session (different URL, same domain)')
+        createSession(domain, pendingContent.url, pendingContent.title, pendingContent)
       }
     } else {
+      console.log('🆕 Creating new session (new domain)')
       createSession(domain, pendingContent.url, pendingContent.title, pendingContent)
     }
 
     setShowContentWarning(false)
     setPendingContent(null)
-  }, [pendingContent, getDomainFromUrl, hasSessionForDomain, loadSession, sessions, setShowNewChatButton, createSession, setShowContentWarning, setPendingContent])
+  }, [pendingContent, getDomainFromUrl, hasSessionForDomain, loadSession, sessions, updateSession, createSession, setShowContentWarning, setPendingContent])
 
   const handleContentWarningCancel = useCallback(() => {
     setShowContentWarning(false)

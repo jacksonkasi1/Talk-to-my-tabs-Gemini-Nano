@@ -31,7 +31,23 @@ const SidePanel: FC = () => {
   const [chromeAIMessage, setChromeAIMessage] = useState<string>("")
   const [pendingPageTitle, setPendingPageTitle] = useState<string>("")
   const [pendingPageUrl, setPendingPageUrl] = useState<string>("")
+  const [isExtensionInvalid, setIsExtensionInvalid] = useState(false)
+  const [currentUrl, setCurrentUrl] = useState<string>('')
   const lastActiveTabId = useRef<number | null>(null)
+  
+  // Check extension validity
+  useEffect(() => {
+    const checkExtensionValidity = () => {
+      if (!chrome.runtime?.id) {
+        setIsExtensionInvalid(true)
+      }
+    }
+    
+    checkExtensionValidity()
+    const interval = setInterval(checkExtensionValidity, 2000)
+    
+    return () => clearInterval(interval)
+  }, [])
   
   const {
     currentSession,
@@ -60,6 +76,15 @@ const SidePanel: FC = () => {
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") || "light"
     document.documentElement.setAttribute("data-theme", savedTheme)
+  }, [])
+  
+  // Get current URL for restricted page detection
+  useEffect(() => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]?.url) {
+        setCurrentUrl(tabs[0].url)
+      }
+    })
   }, [])
 
   // Check for Chrome AI availability
@@ -155,6 +180,12 @@ const SidePanel: FC = () => {
 
   const handleSendMessage = async (inputText: string) => {
     if (!currentSession || isLoadingMessage) return
+    
+    // Check if extension is still valid
+    if (!chrome.runtime?.id) {
+      setIsExtensionInvalid(true)
+      return
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -167,6 +198,13 @@ const SidePanel: FC = () => {
     setLoadingMessage(true)
 
     try {
+      // Debug logging
+      console.log('=== SIDEBAR CHAT DEBUG ===')
+      console.log('Current Session:', currentSession)
+      console.log('Has pageContent?', !!currentSession.pageContent)
+      console.log('Content length:', currentSession.pageContent?.content?.length || 0)
+      console.log('Content preview:', currentSession.pageContent?.content?.substring(0, 200))
+      
       const systemPrompt = currentSession.pageContent ? 
         `You are a helpful AI assistant analyzing a webpage. 
         Current page: "${currentSession.title}"
@@ -273,6 +311,38 @@ const SidePanel: FC = () => {
     currentSession && 
     (getDomainFromUrl(pendingPageUrl) !== currentSession.domain || pendingPageUrl !== currentSession.url)
 
+  // Show extension invalid message
+  if (isExtensionInvalid) {
+    return (
+      <div className="flex flex-col h-screen items-center justify-center p-6 transition-all duration-300 ease-out" style={{ backgroundColor: 'var(--bg)' }}>
+        <div className="text-center max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div
+            className="w-12 h-12 mx-auto mb-4 rounded-full flex items-center justify-center transition-all duration-300"
+            style={{ backgroundColor: 'var(--card-bg)' }}
+          >
+            <RefreshCw className="w-6 h-6 transition-colors duration-200" style={{ color: 'var(--text-tertiary)' }} />
+          </div>
+          <h2 className="text-lg font-medium mb-2 transition-colors duration-200" style={{ color: 'var(--text-primary)' }}>
+            Extension Updated
+          </h2>
+          <p className="text-sm mb-4 transition-colors duration-200" style={{ color: 'var(--text-secondary)' }}>
+            The extension was updated or reloaded. Please close and reopen this sidebar to continue.
+          </p>
+          <button
+            onClick={() => window.close()}
+            className="px-4 py-2 text-sm rounded-lg transition-all duration-200 hover:scale-105 active:scale-95"
+            style={{
+              backgroundColor: 'var(--chip-bg)',
+              color: 'var(--chip-text)'
+            }}
+          >
+            Close Sidebar
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   if (!chromeAIReady) {
     const instructions = getSetupInstructions()
     return (
@@ -341,22 +411,47 @@ const SidePanel: FC = () => {
   }
 
   if (!currentSession) {
+    // Check if we're on a restricted page
+    const isRestrictedUrl = /^(chrome:\/\/|chrome-extension:\/\/|about:|data:|file:\/\/|view-source:)/.test(currentUrl)
+    
     return (
       <div className="flex flex-col h-screen items-center justify-center p-6 transition-all duration-300 ease-out" style={{ backgroundColor: 'var(--bg)' }}>
-        <div className="text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <p className="text-sm mb-4 transition-colors duration-200" style={{ color: 'var(--text-tertiary)' }}>
-            Navigate to a webpage to start chatting
-          </p>
-          <button
-            onClick={initializeSession}
-            className="px-4 py-2 text-sm rounded-lg transition-all duration-200 hover:scale-105 active:scale-95"
-            style={{
-              backgroundColor: 'var(--chip-bg)',
-              color: 'var(--chip-text)'
-            }}
-          >
-            Retry Loading
-          </button>
+        <div className="text-center max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
+          {isRestrictedUrl ? (
+            <>
+              <div
+                className="w-12 h-12 mx-auto mb-4 rounded-full flex items-center justify-center transition-all duration-300"
+                style={{ backgroundColor: 'var(--card-bg)' }}
+              >
+                <AlertCircle className="w-6 h-6 transition-colors duration-200" style={{ color: 'var(--text-tertiary)' }} />
+              </div>
+              <h2 className="text-lg font-medium mb-2 transition-colors duration-200" style={{ color: 'var(--text-primary)' }}>
+                Restricted Page
+              </h2>
+              <p className="text-sm mb-4 transition-colors duration-200" style={{ color: 'var(--text-secondary)' }}>
+                Chrome doesn't allow extensions to access this type of page for security reasons.
+              </p>
+              <p className="text-xs transition-colors duration-200" style={{ color: 'var(--text-tertiary)' }}>
+                Please navigate to a regular webpage (like a news article, blog post, or documentation) to use the chat feature.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm mb-4 transition-colors duration-200" style={{ color: 'var(--text-tertiary)' }}>
+                Navigate to a webpage to start chatting
+              </p>
+              <button
+                onClick={initializeSession}
+                className="px-4 py-2 text-sm rounded-lg transition-all duration-200 hover:scale-105 active:scale-95"
+                style={{
+                  backgroundColor: 'var(--chip-bg)',
+                  color: 'var(--chip-text)'
+                }}
+              >
+                Retry Loading
+              </button>
+            </>
+          )}
         </div>
       </div>
     )

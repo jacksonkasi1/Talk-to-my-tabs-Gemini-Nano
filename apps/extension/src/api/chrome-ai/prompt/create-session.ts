@@ -12,7 +12,8 @@ export const createPromptSession = async (
       systemPrompt: options?.systemPrompt,
       temperature: options?.temperature ?? 0.7,
       topK: options?.topK ?? 3,
-      monitor: options?.monitor
+      monitor: options?.monitor,
+      outputLanguage: 'en' // Required by Chrome AI API
     })
 
     return session
