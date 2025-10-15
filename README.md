@@ -241,11 +241,11 @@ The project uses **GitHub Actions** for automated CI/CD:
 
 ### Chrome Extension (Plasmo Framework)
 ```
-Content Scripts → Background Service Worker → Heroku AI API
+Content Scripts → Background Service Worker → Chrome Built-in AI (Gemini Nano)
        ↓                     ↓                      ↓
- Floating Button    Storage Management    Model Processing
-   Side Panel       Message Routing      Agent Tools
-   New Tab Page     Settings Sync        Chat Completion
+ Floating Button    Storage Management    On-Device AI Processing
+   Side Panel       Message Routing      Summarization & Chat
+   New Tab Page     Settings Sync        Content Generation
 ```
 
 ### Key Technologies
