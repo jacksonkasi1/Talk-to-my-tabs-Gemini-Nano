@@ -1,0 +1,52 @@
+/* apps/extension/src/styles/floating-button.css */
+.floating-button-container {
+  animation: slideInRight 0.3s ease-out;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.new-chat-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  transition: opacity 0.2s;
+}
+
+.new-chat-button:hover {
+  opacity: 0.8;
+}
+
+.close-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.close-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.close-icon {
+  transition: transform 0.2s;
+}
+
+.close-button:hover .close-icon {
+  transform: rotate(90deg);
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}

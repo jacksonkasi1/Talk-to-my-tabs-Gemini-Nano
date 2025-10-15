@@ -1,0 +1,236 @@
+/* content-style.css - With theme support */
+#talktomytabs-root {
+  all: initial;
+  position: fixed !important;
+  bottom: 80px !important;
+  right: 24px !important;
+  z-index: 2147483647 !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  pointer-events: none;
+}
+
+/* Remove any other instances that might exist */
+#talktomytabs-root~#talktomytabs-root {
+  display: none !important;
+}
+
+/* Hide any duplicate floating elements */
+body>div[id^="plasmo-"] {
+  display: none !important;
+}
+
+/* Only show our properly styled root */
+#talktomytabs-root[data-talktomytabs="true"] {
+  display: block !important;
+}
+
+#talktomytabs-root * {
+  pointer-events: auto;
+}
+
+#talktomytabs-root .talktomytabs-floating {
+  position: fixed !important;
+  transition: transform 0.2s ease;
+}
+
+#talktomytabs-root .talktomytabs-floating.dragging {
+  cursor: grabbing !important;
+  transition: none;
+}
+
+/* ========== LIGHT THEME (DEFAULT) ========== */
+/* Main button - Light */
+#talktomytabs-root .main-btn {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 22px !important;
+  background: #1c1c1d !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
+  transition: all 0.2s ease !important;
+  color: white !important;
+  padding: 0 !important;
+  outline: none !important;
+  position: relative !important;
+  margin: 0 !important;
+}
+
+#talktomytabs-root .main-btn:hover {
+  background: #0f0f0f !important;
+  transform: scale(1.05) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+#talktomytabs-root .main-btn:active {
+  transform: scale(0.98) !important;
+}
+
+/* Expanded group - Light */
+#talktomytabs-root .expanded-group {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 3px !important;
+  background: white !important;
+  border-radius: 25px !important;
+  border: 1px solid #d7d7da !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+  animation: expandIn 0.2s ease !important;
+}
+
+/* Action buttons - Light */
+#talktomytabs-root .action-btn {
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 19px !important;
+  border: none !important;
+  background: transparent !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
+  color: #787881 !important;
+  padding: 0 !important;
+  outline: none !important;
+  margin: 0 !important;
+}
+
+#talktomytabs-root .action-btn:hover {
+  background: #f4f4f5 !important;
+  color: #0f0f0f !important;
+}
+
+#talktomytabs-root .action-btn:active {
+  transform: scale(0.95) !important;
+}
+
+#talktomytabs-root .action-btn.close-btn {
+  color: #787881 !important;
+}
+
+#talktomytabs-root .action-btn.close-btn:hover {
+  background: #fee2e2 !important;
+  color: #dc2626 !important;
+}
+
+/* Success pill - Light */
+#talktomytabs-root .success-pill {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 8px 14px !important;
+  background: #1c1c1d !important;
+  color: white !important;
+  border-radius: 18px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
+  animation: successIn 0.2s ease !important;
+}
+
+/* ========== DARK THEME ========== */
+/* Main button - Dark */
+#talktomytabs-root[data-theme="dark"] .main-btn {
+  background: #fafafa !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #0f0f0f !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+#talktomytabs-root[data-theme="dark"] .main-btn:hover {
+  background: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Expanded group - Dark */
+#talktomytabs-root[data-theme="dark"] .expanded-group {
+  background: #2f2f33 !important;
+  border: 1px solid #46464b !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Action buttons - Dark */
+#talktomytabs-root[data-theme="dark"] .action-btn {
+  color: #898992 !important;
+}
+
+#talktomytabs-root[data-theme="dark"] .action-btn:hover {
+  background: #222224 !important;
+  color: #fafafa !important;
+}
+
+#talktomytabs-root[data-theme="dark"] .action-btn.close-btn:hover {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #ef4444 !important;
+}
+
+/* Success pill - Dark */
+#talktomytabs-root[data-theme="dark"] .success-pill {
+  background: #fafafa !important;
+  color: #0f0f0f !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Animations */
+@keyframes expandIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes successIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Spinning animation class */
+#talktomytabs-root .animate-spin {
+  animation: spin 1s linear infinite !important;
+}
+
+/* All icons same size */
+#talktomytabs-root svg {
+  stroke-width: 2 !important;
+  width: 16px !important;
+  height: 16px !important;
+}
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+  #talktomytabs-root .main-btn {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  #talktomytabs-root .action-btn {
+    width: 34px !important;
+    height: 34px !important;
+  }
+}

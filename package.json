@@ -1,0 +1,28 @@
+{
+  "name": "talktomytabs",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "check-types": "turbo run check-types",
+    "build:extension": "cd apps/extension && bun run build && bun run package",
+    "release:patch": "cd apps/extension && npm version patch && cd ../.. && git add . && git commit -m \"chore: bump extension version\" && git push",
+    "release:minor": "cd apps/extension && npm version minor && cd ../.. && git add . && git commit -m \"chore: bump extension version\" && git push",
+    "release:major": "cd apps/extension && npm version major && cd ../.. && git add . && git commit -m \"chore: bump extension version\" && git push"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2",
+    "turbo": "^2.5.6",
+    "typescript": "5.9.2"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "packageManager": "bun@1.2.20",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}
