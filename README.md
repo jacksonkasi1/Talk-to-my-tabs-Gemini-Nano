@@ -13,7 +13,6 @@
 ## 🔗 Quick Links
 
 - 🌐 **Demo**: [YouTube Video](https://youtu.be/JB4rcXm1GLA)
-- 📖 **Blog Post**: [Dev.to Article](https://dev.to/jacksonkasi/talktomytabs-a-back-to-school-ai-reading-research-assistant-g2n)
 - 🚀 **Download**: [Latest Release](https://github.com/jacksonkasi1/TalkToMyTabs/releases/latest)
 - 🐛 **Issues**: [GitHub Issues](https://github.com/jacksonkasi1/TalkToMyTabs/issues)
 - 💬 **Discussions**: [GitHub Discussions](https://github.com/jacksonkasi1/TalkToMyTabs/discussions)
